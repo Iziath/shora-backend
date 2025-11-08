@@ -139,7 +139,7 @@ exports.deleteIncident = async (req, res) => {
  */
 exports.createIncident = async (req, res) => {
   try {
-    const { description, type, severity, location, reportedBy } = req.body;
+    const { description, type, severity, location, reportedBy, chatbotUserId, chatbotUserName } = req.body;
     
     // Créer un incident avec userId optionnel (peut être null pour chatbot public)
     const incidentData = {
@@ -149,11 +149,13 @@ exports.createIncident = async (req, res) => {
       location: location || 'Chantier',
       status: 'open',
       reportedAt: new Date(),
-      userId: null // Par défaut null pour chatbot public
+      userId: null, // Par défaut null pour chatbot public
+      chatbotUserId: chatbotUserId || null,
+      chatbotUserName: chatbotUserName || null
     };
     
-    // Si reportedBy est fourni, essayer de trouver l'utilisateur
-    if (reportedBy && reportedBy !== 'chatbot') {
+    // Si reportedBy est fourni (pour WhatsApp), essayer de trouver l'utilisateur
+    if (reportedBy && reportedBy !== 'chatbot' && !chatbotUserId) {
       const user = await User.findOne({ phoneNumber: reportedBy });
       if (user) {
         incidentData.userId = user._id;
@@ -163,7 +165,7 @@ exports.createIncident = async (req, res) => {
     const incident = new Incident(incidentData);
     await incident.save();
     
-    logger.info(`✅ Incident créé depuis chatbot: ${incident._id}`);
+    logger.info(`✅ Incident créé depuis chatbot: ${incident._id}${chatbotUserName ? ` par ${chatbotUserName}` : ''}`);
     
     res.json({
       success: true,

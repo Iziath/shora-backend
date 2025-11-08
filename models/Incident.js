@@ -7,6 +7,14 @@ const incidentSchema = new mongoose.Schema({
     required: false, // Optionnel pour permettre les incidents depuis le chatbot public
     default: null
   },
+  chatbotUserId: {
+    type: String, // ID de l'utilisateur chatbot (référence vers ChatbotUser dans Quran_back)
+    default: null
+  },
+  chatbotUserName: {
+    type: String, // Nom de l'utilisateur chatbot qui a signalé l'incident
+    default: null
+  },
   type: {
     type: String,
     enum: ['danger', 'accident', 'near-miss', 'equipment'],
