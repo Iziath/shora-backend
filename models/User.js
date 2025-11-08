@@ -3,9 +3,23 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
-    required: true,
+    required: false, // Optionnel pour les utilisateurs chatbot
     unique: true,
+    sparse: true, // Permet plusieurs null
     match: /^\+229\d{8}$/  // Format béninois
+  },
+  // Champs pour les utilisateurs chatbot (sans numéro de téléphone)
+  isChatbotUser: {
+    type: Boolean,
+    default: false // true = utilisateur chatbot, false = utilisateur WhatsApp
+  },
+  hasVisitedBefore: {
+    type: Boolean,
+    default: false
+  },
+  lastVisitAt: {
+    type: Date,
+    default: Date.now
   },
   name: { type: String, default: '' },
   profession: {
@@ -60,9 +74,11 @@ const userSchema = new mongoose.Schema({
 
 // Index pour recherche rapide
 userSchema.index({ phoneNumber: 1 });
+userSchema.index({ name: 1 }); // Pour recherche par nom (chatbot users)
 userSchema.index({ profession: 1 });
 userSchema.index({ isActive: 1 });
 userSchema.index({ lastInteraction: -1 });
+userSchema.index({ isChatbotUser: 1, lastVisitAt: -1 }); // Pour les rappels
 
 module.exports = mongoose.model('User', userSchema);
 
