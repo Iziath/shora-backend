@@ -213,22 +213,43 @@ function getLocalIP() {
 exports.generateChatbotQR = async (req, res) => {
   try {
     // URL du frontend (page publique du chatbot)
+    // En production: TOUJOURS utiliser la variable d'environnement
     // En développement local: utiliser l'IP locale pour permettre l'accès depuis mobile
-    // En production: utiliser la variable d'environnement
     let frontendUrl = process.env.FRONTEND_URL || process.env.DASHBOARD_URL;
     
-    // Si pas d'URL définie, utiliser l'IP locale pour le développement
-    if (!frontendUrl) {
-      const localIP = getLocalIP();
-      const frontendPort = process.env.FRONTEND_PORT || '5173';
-      frontendUrl = `http://${localIP}:${frontendPort}`;
+    // En production, FORCER l'utilisation de FRONTEND_URL
+    if (process.env.NODE_ENV === 'production') {
+      if (!frontendUrl) {
+        logger.error('❌ FRONTEND_URL non défini en production ! Veuillez configurer cette variable.');
+        return res.status(500).json({
+          success: false,
+          error: 'FRONTEND_URL non configuré. Veuillez définir FRONTEND_URL dans les variables d\'environnement.'
+        });
+      }
+      // S'assurer que l'URL commence par https:// en production
+      if (!frontendUrl.startsWith('https://')) {
+        logger.warn(`⚠️ FRONTEND_URL ne commence pas par https://: ${frontendUrl}`);
+        // Ne pas forcer https:// automatiquement, mais logger un avertissement
+      }
+    } else {
+      // En développement, utiliser l'IP locale si FRONTEND_URL n'est pas défini
+      if (!frontendUrl) {
+        const localIP = getLocalIP();
+        const frontendPort = process.env.FRONTEND_PORT || '5173';
+        frontendUrl = `http://${localIP}:${frontendPort}`;
+        logger.info(`🔧 Mode développement: utilisation de l'IP locale ${frontendUrl}`);
+      }
     }
     
+    // Nettoyer l'URL (enlever le slash final si présent)
+    frontendUrl = frontendUrl.replace(/\/$/, '');
+    
     // Créer le lien vers la page publique du chatbot (accessible sur mobile)
-    // Format: http://192.168.1.127:5173/chatbot
     const chatbotLink = `${frontendUrl}/chatbot`;
     
     logger.info(`✅ QR code chatbot généré: ${chatbotLink}`);
+    logger.info(`📱 Environnement: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`🌐 Frontend URL: ${frontendUrl}`);
     
     // Générer le QR code avec le lien
     const qrImageUrl = await generateQRCode(chatbotLink);
