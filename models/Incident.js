@@ -4,7 +4,8 @@ const incidentSchema = new mongoose.Schema({
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
-    required: true 
+    required: false, // Optionnel pour permettre les incidents depuis le chatbot public
+    default: null
   },
   type: {
     type: String,

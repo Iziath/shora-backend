@@ -135,6 +135,48 @@ exports.deleteIncident = async (req, res) => {
 };
 
 /**
+ * Crée un incident (route publique pour le chatbot)
+ */
+exports.createIncident = async (req, res) => {
+  try {
+    const { description, type, severity, location, reportedBy } = req.body;
+    
+    // Créer un incident avec userId optionnel (peut être null pour chatbot public)
+    const incidentData = {
+      description: description || 'Incident signalé via chatbot',
+      type: type || 'danger',
+      severity: severity || 'high',
+      location: location || 'Chantier',
+      status: 'open',
+      reportedAt: new Date(),
+      userId: null // Par défaut null pour chatbot public
+    };
+    
+    // Si reportedBy est fourni, essayer de trouver l'utilisateur
+    if (reportedBy && reportedBy !== 'chatbot') {
+      const user = await User.findOne({ phoneNumber: reportedBy });
+      if (user) {
+        incidentData.userId = user._id;
+      }
+    }
+    
+    const incident = new Incident(incidentData);
+    await incident.save();
+    
+    logger.info(`✅ Incident créé depuis chatbot: ${incident._id}`);
+    
+    res.json({
+      success: true,
+      data: incident,
+      message: 'Incident enregistré et signalé au superviseur'
+    });
+  } catch (error) {
+    logger.error('Erreur createIncident:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
  * Récupère les statistiques des incidents
  */
 exports.getIncidentStats = async (req, res) => {

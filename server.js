@@ -86,6 +86,10 @@ app.use('/api/scan', scanRoutes); // Redirection QR → WhatsApp
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/bot', botRoutes); // Chatbot SHORA
 
+// Route publique pour créer des incidents depuis le chatbot
+const incidentController = require('./controllers/incidentController');
+app.post('/api/incidents', incidentController.createIncident);
+
 // ========== WEBHOOK POUR INCIDENTS (Dashboard) ==========
 app.post('/api/webhook/incident', async (req, res) => {
   try {
